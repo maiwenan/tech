@@ -1,5 +1,5 @@
-export function render(element, container) {
-  const { type, props } = element
+export function createDom(fiber) {
+  const { type, props } = fiber
   // 类型为TEXT_ELEMENT的元素需创建文本节点，其他创建正常的dom节点即可
   const dom = type === 'TEXT_ELEMENT'
     ? document.createTextNode('')
@@ -13,8 +13,5 @@ export function render(element, container) {
       dom[name] = props[name]
     })
 
-  // 递归创建子元素的dom节点并挂载到父节点
-  element.props.children.forEach(child => render(child, dom))
-
-  container.appendChild(dom)
+  return dom
 }
