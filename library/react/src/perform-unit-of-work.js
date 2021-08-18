@@ -1,6 +1,7 @@
 import { createDom } from './dom'
 
 let nextUnitOfWork = null
+let wipRoot = null
 
 export function workLoop(deadline) {
   let shouldYield = false
@@ -9,6 +10,12 @@ export function workLoop(deadline) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
     shouldYield = deadline.timeRemaining() < 1
   }
+
+  // 批量提交dom修改
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot()
+  }
+
   window.requestIdleCallback(workLoop)
 }
 
@@ -21,7 +28,7 @@ window.requestIdleCallback(workLoop)
  * 把整个渲染tree任务拆分成多个小块任务，依据节点进行拆分，即每个渲染dom点就是一个小任务(fiber)
  * 这样做是为了避免渲染树太大对主线程造成阻塞
  * 每个任务单元要完成三件事：
- * 1. 把element添加到dom上
+ * 1. 把element添加到dom上 (在 commitWork 中完成)
  * 2. 为当前fiber节点的子节点创建fiber节点
  * 3. 返回下一个任务单元
  * 注意需区分：
@@ -33,11 +40,6 @@ export function performUnitOfWork(fiber) {
   // 创建fiber节点对应的dom节点
   if (!fiber.dom) {
     fiber.dom = createDom(fiber)
-  }
-
-  // 1. 渲染当前fiber的dom节点到父节点的dom上
-  if (fiber.parent) {
-    fiber.parent.dom.appendChild(fiber.dom)
   }
 
   // 2. 为当前fiber节点的每个子element节点创建新的fiber节点
@@ -82,12 +84,39 @@ export function performUnitOfWork(fiber) {
   }
 }
 
+function commitRoot() {
+  commitWork(wipRoot.child)
+  wipRoot = null
+}
+
+/**
+ * performUnitOfWork 一边遍历element节点，一边生成dom节点并添加到其父节点上。
+ * 在完成整棵树的渲染前，浏览器还要中途阻断这个过程。 那么用户就有可能看到渲染未完全的 UI
+ * 因此我们把performUnitOfWork中的第一步移到commitWork中完成，即performUnitOfWork完成所有树节点遍历后，再一次性提交dom的修改
+ */
+function commitWork(fiber) {
+  if (!fiber) {
+    return
+  }
+
+  // 渲染当前fiber的dom节点到父节点的dom上
+  if (fiber.parent) {
+    fiber.parent.dom.appendChild(fiber.dom)
+    commitWork(fiber.child)
+    commitWork(fiber.sibling)
+  }
+}
+
+
+
+
 export function render(element, container) {
   // fiber树的跟节点，即跟节点fiber
-  nextUnitOfWork = {
+  wipRoot = {
     dom: container,
     props: {
       children: [element]
     }
   }
+  nextUnitOfWork = wipRoot
 }
