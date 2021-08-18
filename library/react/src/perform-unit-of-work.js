@@ -1,7 +1,29 @@
-import { createDom } from './dom'
+import { createDom, updateDom } from './dom'
 
+// 工作单元fiber引用
 let nextUnitOfWork = null
+// 根节点fiber引用
 let wipRoot = null
+// 上次提交到 DOM 节点的 fiber 树引用
+let currentRoot = null
+// 提交（commit）整颗 fiber 树（wipRoot）的变更到 DOM 上的时候，并不会遍历旧 fiber，
+// 因此需要记录要删除的fiber节点
+let deletions = []
+
+export function render(element, container) {
+  // fiber树的跟节点，即跟节点fiber
+  wipRoot = {
+    dom: container,
+    props: {
+      children: [element]
+    },
+    // 记录旧 fiber 节点（上一个 commit 阶段使用的 fiber 节点）的引用
+    alternate: currentRoot
+  }
+  // 清空上一次的记录
+  deletions = []
+  nextUnitOfWork = wipRoot
+}
 
 export function workLoop(deadline) {
   let shouldYield = false
@@ -44,29 +66,8 @@ export function performUnitOfWork(fiber) {
 
   // 2. 为当前fiber节点的每个子element节点创建新的fiber节点
   const elements = fiber.props.children
-  let index = 0
-  let prevSibling = null
 
-  while (index < elements.length) {
-    const element = elements[index]
-    const newFiber = {
-      type: element.type,
-      props: element.props,
-      parent: fiber,
-      dom: null
-    }
-
-    // 如果是第一个子节点，则当前fiber节点的child属性指向第一个子fiber节点
-    if (index === 0) {
-      fiber.child = newFiber
-    } else {
-      // 否则上一个子节点的sibling属性指向当前子fiber节点
-      prevSibling.sibling = newFiber
-    }
-
-    prevSibling = newFiber
-    index++
-  }
+  reconcileChildren(fiber, elements)
 
   // 3. 最后，找到下一个任务单元，先找child节点，再找sibling节点，最后找uncle节点
   if (fiber.child) {
@@ -84,8 +85,91 @@ export function performUnitOfWork(fiber) {
   }
 }
 
+/**
+ * 调和（reconcile）旧的 fiber 节点 和新的 react elements。
+ * 在迭代整个 elements 数组的同时我们也需迭代旧的 fiber 节点（wipFiber.alternate）,
+ * 在迭代过程中主要比较 oldFiber 和 element 的差异：
+ * 1. element 是我们想要渲染到 DOM 上的东西
+ * 2. oldFiber 是我们上次渲染 fiber 树
+ * 比较步骤：
+ * 1. 对于新旧节点类型是相同的情况，我们可以复用旧的 DOM，仅修改上面的属性
+ * 2. 如果类型不同，意味着我们需要创建一个新的 DOM 节点
+ * 3. 如果类型不同，并且旧节点存在的话，需要把旧节点的 DOM 给移除
+ * @param {*} wipFiber 当前正在工作的fiber节点
+ * @param {*} elements
+ */
+function reconcileChildren(wipFiber, elements) {
+  let index = 0
+  let prevSibling = null
+  // 旧的fiber节点的第一个子fiber节点
+  let oldFiber = wipFiber.alternate && wipFiber.alternate.child
+
+  while (
+    index < elements.length ||
+    oldFiber != null
+  ) {
+    const element = elements[index]
+    let newFiber = null
+    const sameType =
+      oldFiber &&
+      element.type &&
+      oldFiber.type === element.type
+
+    // 1. 新旧节点类型是相同，更新dom
+    if (sameType) {
+      newFiber = {
+        type: oldFiber.type,
+        props: element.props,
+        // 复用原来dom节点
+        dom: oldFiber.dom,
+        parent: wipFiber,
+        alternate: oldFiber,
+        // 标记dom的操作类型：更新dom节点
+        effetTag: 'UPDATE'
+      }
+    }
+    // 2. 类型不同，创建并添加dom
+    if (element && !sameType) {
+      newFiber = {
+        type: element.type,
+        props: element.props,
+        dom: null,
+        parent: wipFiber,
+        alternate: null,
+        // 标记dom的操作类型: 新建dom节点
+        effetTag: 'PLACEMENT'
+      }
+    }
+    //类型不同并且旧节点存在，删除dom
+    if (oldFiber && !sameType) {
+      oldFiber.effetTag = 'DELETION'
+      deletions.push(oldFiber)
+    }
+
+    if (oldFiber) {
+      oldFiber = oldFiber.sibling
+    }
+
+    // 如果是第一个子节点，则当前fiber节点的child属性指向第一个子fiber节点
+    if (index === 0) {
+      wipFiber.child = newFiber
+    } else {
+      // 否则上一个子节点的sibling属性指向当前子fiber节点
+      prevSibling.sibling = newFiber
+    }
+
+    prevSibling = newFiber
+    index++
+  }
+}
+
 function commitRoot() {
+  // 提交本次更新要删除dom的fiber节点
+  deletions.forEach(commitWork)
+
   commitWork(wipRoot.child)
+  // 记录上次提交 DOM 节点修改的 fiber 树引用
+  currentRoot = wipRoot
   wipRoot = null
 }
 
@@ -98,10 +182,31 @@ function commitWork(fiber) {
   if (!fiber) {
     return
   }
+  const domParent = fiber.parent.dom
 
-  // 渲染当前fiber的dom节点到父节点的dom上
-  if (fiber.parent) {
-    fiber.parent.dom.appendChild(fiber.dom)
+  if (
+    fiber.effetTag === 'PLACEMENT' &&
+    fiber.dom != null
+  ) {
+    // 添加当前fiber的dom节点到父节点的dom上
+    domParent.appendChild(fiber.dom)
+  } else if (
+    fiber.effetTag === 'UPDATE' &&
+    fiber.dom != null
+  ) {
+    updateDom(
+      fiber.dom,
+      fiber.alternate.props,
+      fiber.props
+    )
+  } else if (fiber.effetTag === 'DELETION') {
+    // 删除该fiber的dom节点
+    domParent.removeChild(fiber.dom)
+  }
+
+
+  if (domParent) {
+    domParent.appendChild(fiber.dom)
     commitWork(fiber.child)
     commitWork(fiber.sibling)
   }
@@ -110,13 +215,4 @@ function commitWork(fiber) {
 
 
 
-export function render(element, container) {
-  // fiber树的跟节点，即跟节点fiber
-  wipRoot = {
-    dom: container,
-    props: {
-      children: [element]
-    }
-  }
-  nextUnitOfWork = wipRoot
-}
+
