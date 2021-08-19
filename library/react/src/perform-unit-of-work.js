@@ -204,12 +204,8 @@ function commitWork(fiber) {
     domParent.removeChild(fiber.dom)
   }
 
-
-  if (domParent) {
-    domParent.appendChild(fiber.dom)
-    commitWork(fiber.child)
-    commitWork(fiber.sibling)
-  }
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
 }
 
 
