@@ -59,16 +59,14 @@ window.requestIdleCallback(workLoop)
  * 3. fiber 节点，即 fiber node（从element 到 DOM 节点的中间产物，用于时间切片）
  */
 export function performUnitOfWork(fiber) {
-  // 创建fiber节点对应的dom节点
-  if (!fiber.dom) {
-    fiber.dom = createDom(fiber)
+  // 当fiber类型为函数时，使用不同函数进行diff
+  const isFunctionComponent = fiber.type instanceof Function
+
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
   }
-
-  // 2. 为当前fiber节点的每个子element节点创建新的fiber节点
-  const elements = fiber.props.children
-
-  reconcileChildren(fiber, elements)
-
   // 3. 最后，找到下一个任务单元，先找child节点，再找sibling节点，最后找uncle节点
   if (fiber.child) {
     return fiber.child
@@ -83,6 +81,31 @@ export function performUnitOfWork(fiber) {
     }
     nextFiber = nextFiber.parent
   }
+}
+
+/**
+ * 更新函数组件
+ */
+function updateFunctionComponent(fiber) {
+  // 调用函数生成函数组件的渲染内容
+  const elements = [fiber.type(fiber.props)]
+
+  reconcileChildren(fiber, elements)
+}
+
+/**
+ * 更新浏览器宿主元素
+ */
+function updateHostComponent(fiber) {
+  // 创建fiber节点对应的dom节点
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber)
+  }
+
+  // 2. 为当前fiber节点的每个子element节点创建新的fiber节点
+  const elements = fiber.props.children
+
+  reconcileChildren(fiber, elements)
 }
 
 /**
@@ -182,7 +205,13 @@ function commitWork(fiber) {
   if (!fiber) {
     return
   }
-  const domParent = fiber.parent.dom
+
+  let domParentFiber = fiber.parent
+  // 往上遍历知道找到有dom节点的父级fiber节点
+  while (!domParentFiber.dom) {
+    domParentFiber = domParentFiber.parent
+  }
+  const domParent = domParentFiber.dom
 
   if (
     fiber.effetTag === 'PLACEMENT' &&
@@ -200,12 +229,20 @@ function commitWork(fiber) {
       fiber.props
     )
   } else if (fiber.effetTag === 'DELETION') {
-    // 删除该fiber的dom节点
-    domParent.removeChild(fiber.dom)
+    commitDeletion(fiber, domParent)
   }
 
   commitWork(fiber.child)
   commitWork(fiber.sibling)
+}
+
+function commitDeletion(fiber, domParent) {
+  if (fiber.dom) {
+    // 删除该fiber的dom节点
+    domParent.removeChild(fiber.dom)
+  } else {
+    commitDeletion(fiber.child, domParent)
+  }
 }
 
 

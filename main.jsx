@@ -3,23 +3,11 @@ import './style.css'
 
 const container = document.getElementById('app')
 
-function updateValue(e) {
-  console.log(e)
-  renderApp(e.target.value)
+function App(props) {
+  return <h1>Hi {props.name}</h1>
 }
-
-function renderApp(value) {
-  const element = (
-    <div>
-      <input onInput={updateValue} value={value} />
-      <h2>Hello {value}</h2>
-    </div>
-  );
-
-  React.render(element, container)
-}
-
-renderApp('hello')
+const element = <App name="foo" />
+React.render(element, container)
 
 
 
