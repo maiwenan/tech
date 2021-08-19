@@ -83,15 +83,58 @@ export function performUnitOfWork(fiber) {
   }
 }
 
+let wipFiber = null
+let hookIndex = 0
+
 /**
  * 更新函数组件
  */
 function updateFunctionComponent(fiber) {
+  // 初始化useState相关变量
+  wipFiber = fiber
+  hookIndex = 0
+  // 存储调用hook的结果
+  wipFiber.hooks = []
+
   // 调用函数生成函数组件的渲染内容
   const elements = [fiber.type(fiber.props)]
 
   reconcileChildren(fiber, elements)
 }
+
+export function useState(initial) {
+  const oldHook =
+    wipFiber.alternate &&
+    wipFiber.alternate.hooks &&
+    wipFiber.alternate.hooks[hookIndex]
+  const hook = {
+    state: oldHook ? oldHook.state : initial,
+    queue: []
+  }
+  const actions = oldHook ? oldHook.queue : []
+  actions.forEach(action => {
+    hook.state = action(hook.state)
+  })
+
+  const setState = action => {
+    // 暂存action，并在下一次渲染时进行消费
+    hook.queue.push(action)
+
+    // 设置wipRoot为当前root fiber，触发新一轮渲染
+    wipRoot = {
+      dom: currentRoot.dom,
+      props: currentRoot.props,
+      alternate: currentRoot
+    }
+    nextUnitOfWork = wipRoot
+    deletions = []
+  }
+
+  wipFiber.hooks.push(hook)
+  hookIndex++
+  return [hook.state, setState]
+}
+
 
 /**
  * 更新浏览器宿主元素
@@ -244,8 +287,3 @@ function commitDeletion(fiber, domParent) {
     commitDeletion(fiber.child, domParent)
   }
 }
-
-
-
-
-
