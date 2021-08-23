@@ -1,4 +1,4 @@
-export function createTextElement(text) {
+export function createTextElement (text) {
   return {
     type: 'TEXT_ELEMENT',
     props: {
@@ -8,7 +8,7 @@ export function createTextElement(text) {
   }
 }
 
-export function createElement(type, props, ...children) {
+export function createElement (type, props, ...children) {
   return {
     type,
     props: {
@@ -18,7 +18,7 @@ export function createElement(type, props, ...children) {
         .flat()
         .map(
           // 非对象child需创建文本类型元素
-          child => typeof child === 'object'? child : createTextElement(child)
+          child => typeof child === 'object' ? child : createTextElement(child)
         )
     }
   }

@@ -1,0 +1,52 @@
+{
+  // 配置这个路径是可以让编辑器识别并提示类型校验
+  "path-intellisense.mappings": {
+    // "@": "${workspackRoot}/src",
+  },
+  "prettier.singleQuote": true,
+  "prettier.jsxSingleQuote": true,
+  "vetur.format.defaultFormatterOptions": {
+    "js-beautify-html": {
+      "wrap_attributes": "force-aligned"
+    },
+    "prettyhtml": {
+      "printWidth": 170,
+      "singleQuote": false,
+      "wrapAttributes": false,
+      "sortAttributes": true
+    },
+    "prettier": {
+      "semi": true,
+      "singleQuote": true
+    }
+  },
+  "vetur.format.defaultFormatter.html": "js-beautify-html",
+  "vetur.format.defaultFormatter.css": "prettier",
+  "vetur.format.defaultFormatter.postcss": "prettier",
+  "vetur.format.defaultFormatter.scss": "prettier",
+  "vetur.format.defaultFormatter.less": "prettier",
+  "vetur.format.defaultFormatter.stylus": "stylus-supremacy",
+  "vetur.format.defaultFormatter.js": "prettier-eslint",
+  "vetur.format.defaultFormatter.ts": "prettier",
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "vue-html",
+    "typescript",
+    "html",
+    "vue"
+  ],
+  "editor.formatOnSave": false,
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    }
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.fixAll.eslint": true
+  },
+  "eggHelper.serverPort": 35684
+}

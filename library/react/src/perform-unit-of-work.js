@@ -10,7 +10,7 @@ let currentRoot = null
 // 因此需要记录要删除的fiber节点
 let deletions = []
 
-export function render(element, container) {
+export function render (element, container) {
   // fiber树的跟节点，即跟节点fiber
   wipRoot = {
     dom: container,
@@ -25,7 +25,7 @@ export function render(element, container) {
   nextUnitOfWork = wipRoot
 }
 
-export function workLoop(deadline) {
+export function workLoop (deadline) {
   let shouldYield = false
 
   while (nextUnitOfWork && !shouldYield) {
@@ -58,7 +58,7 @@ window.requestIdleCallback(workLoop)
  * 2. dom 节点，即 DOM node
  * 3. fiber 节点，即 fiber node（从element 到 DOM 节点的中间产物，用于时间切片）
  */
-export function performUnitOfWork(fiber) {
+export function performUnitOfWork (fiber) {
   // 当fiber类型为函数时，使用不同函数进行diff
   const isFunctionComponent = fiber.type instanceof Function
 
@@ -89,7 +89,7 @@ let hookIndex = 0
 /**
  * 更新函数组件
  */
-function updateFunctionComponent(fiber) {
+function updateFunctionComponent (fiber) {
   // 初始化useState相关变量
   wipFiber = fiber
   hookIndex = 0
@@ -102,7 +102,7 @@ function updateFunctionComponent(fiber) {
   reconcileChildren(fiber, elements)
 }
 
-export function useState(initial) {
+export function useState (initial) {
   const oldHook =
     wipFiber.alternate &&
     wipFiber.alternate.hooks &&
@@ -135,11 +135,10 @@ export function useState(initial) {
   return [hook.state, setState]
 }
 
-
 /**
  * 更新浏览器宿主元素
  */
-function updateHostComponent(fiber) {
+function updateHostComponent (fiber) {
   // 创建fiber节点对应的dom节点
   if (!fiber.dom) {
     fiber.dom = createDom(fiber)
@@ -164,7 +163,7 @@ function updateHostComponent(fiber) {
  * @param {*} wipFiber 当前正在工作的fiber节点
  * @param {*} elements
  */
-function reconcileChildren(wipFiber, elements) {
+function reconcileChildren (wipFiber, elements) {
   let index = 0
   let prevSibling = null
   // 旧的fiber节点的第一个子fiber节点
@@ -206,7 +205,7 @@ function reconcileChildren(wipFiber, elements) {
         effetTag: 'PLACEMENT'
       }
     }
-    //类型不同并且旧节点存在，删除dom
+    // 类型不同并且旧节点存在，删除dom
     if (oldFiber && !sameType) {
       oldFiber.effetTag = 'DELETION'
       deletions.push(oldFiber)
@@ -229,7 +228,7 @@ function reconcileChildren(wipFiber, elements) {
   }
 }
 
-function commitRoot() {
+function commitRoot () {
   // 提交本次更新要删除dom的fiber节点
   deletions.forEach(commitWork)
 
@@ -244,7 +243,7 @@ function commitRoot() {
  * 在完成整棵树的渲染前，浏览器还要中途阻断这个过程。 那么用户就有可能看到渲染未完全的 UI
  * 因此我们把performUnitOfWork中的第一步移到commitWork中完成，即performUnitOfWork完成所有树节点遍历后，再一次性提交dom的修改
  */
-function commitWork(fiber) {
+function commitWork (fiber) {
   if (!fiber) {
     return
   }
@@ -279,7 +278,7 @@ function commitWork(fiber) {
   commitWork(fiber.sibling)
 }
 
-function commitDeletion(fiber, domParent) {
+function commitDeletion (fiber, domParent) {
   if (fiber.dom) {
     // 删除该fiber的dom节点
     domParent.removeChild(fiber.dom)
