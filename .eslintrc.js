@@ -11,6 +11,11 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module'
   },
+  global: [
+    'describe',
+    'it',
+    'expect'
+  ],
   extends: [
     'standard',
     'plugin:@typescript-eslint/recommended'

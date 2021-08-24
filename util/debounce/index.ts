@@ -2,12 +2,13 @@ type Handler = (...args: unknown[]) => void
 
 function debounce (func: Handler, timeout: number, immediate = false): Handler {
   let timer = null
+  let result = null
 
-  return function (...args: unknown[]) {
+  function inner (...args: unknown[]) {
     if (immediate) {
       // 立即执行
       if (!timer) {
-        func.apply(this, args)
+        result = func.apply(this, args)
       } else {
         clearTimeout(timer)
       }
@@ -26,7 +27,16 @@ function debounce (func: Handler, timeout: number, immediate = false): Handler {
         timeout
       )
     }
+    return result
   }
+
+  // 取消执行
+  inner.cancel = function () {
+    clearTimeout(timer)
+    timer = null
+  }
+
+  return inner
 }
 
 export default debounce
