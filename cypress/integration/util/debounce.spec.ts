@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe('/util/debounce.js Test', () => {
+describe('/util/debounce Test', () => {
   beforeEach(() => {
     cy.visit('/util/debounce/demo/index.html')
   })

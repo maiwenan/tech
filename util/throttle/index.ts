@@ -1,22 +1,12 @@
 type Handler = (...args: unknown[]) => void
 
-export default function throttle (func: Handler, timeout: number, { leading = true, trailing = true }): Handler {
+export default function throttle (func: Handler, timeout: number, { leading = true, trailing = true } = {}): Handler {
   let timer = null
   let lastTime = 0
-  let params = null
-  let context = null
 
-  const helper = () => {
-    // 记录最新执行时间，避免剩余时间计算不正确
-    // 重置为0用于判断是否要第一次执行
-    lastTime = leading ? Date.now() : 0
-    timer = null
-    func.apply(context, params)
-  }
-
-  return function (...args: unknown[]) {
+  function throttled (...args: unknown[]) {
     const now = Date.now()
-    lastTime = lastTime === 0 && leading ? lastTime : now
+    lastTime = lastTime === 0 && leading === false ? now : lastTime
     const remaining = timeout - (now - lastTime)
     let result = null
 
@@ -28,11 +18,27 @@ export default function throttle (func: Handler, timeout: number, { leading = tr
         timer = null
       }
       lastTime = now
-      func.apply(context, params)
+      func.apply(this, args)
     } else if (!timer && trailing) {
-      timer = setTimeout(helper, timeout)
+      timer = setTimeout(() => {
+        // 记录最新执行时间，避免剩余时间计算不正确
+        // 重置为0用于判断是否要第一次执行
+        lastTime = leading ? Date.now() : 0
+        timer = null
+        func.apply(this, args)
+      }, timeout)
     }
 
     return result
   }
+
+  throttled.cancel = function () {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+      lastTime = 0
+    }
+  }
+
+  return throttled
 }

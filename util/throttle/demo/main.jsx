@@ -1,23 +1,40 @@
 import throttle from '../index'
 
 let count = 1
-let status = false
-const container = document.body
+let options = {
+  leading: true,
+  trailing: true
+}
+const container = document.getElementById('container')
 const app = document.getElementById('app')
-const toggleBtn = document.getElementById('toggle')
+const leadingBtn = document.getElementById('leading')
+const trailingBtn = document.getElementById('trailing')
 const cancelBtn = document.getElementById('cancel')
 
 function add (e) {
   app.innerHTML = count++
 }
 
-let addHandler = throttle(add, 3000, status)
+let addHandler = throttle(add, 1000, options)
 
-toggleBtn.addEventListener('change', function (e) {
-  status = e.target.value
+leadingBtn.addEventListener('change', function (e) {
+  options.leading = e.target.checked
 
   addHandler.cancel()
-  addHandler = throttle(add, 3000, status)
+  container.removeEventListener('mousemove', addHandler)
+  console.log(options)
+  addHandler = throttle(add, 1000, options)
+  container.addEventListener('mousemove', addHandler)
+})
+
+trailingBtn.addEventListener('change', function (e) {
+  options.trailing = e.target.checked
+
+  addHandler.cancel()
+  container.removeEventListener('mousemove', addHandler)
+  console.log(options)
+  addHandler = throttle(add, 1000, options)
+  container.addEventListener('mousemove', addHandler)
 })
 
 container.addEventListener('mousemove', addHandler)

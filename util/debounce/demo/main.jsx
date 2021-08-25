@@ -14,7 +14,7 @@ function add (e) {
 let addHandler = debounce(add, 3000, status)
 
 toggleBtn.addEventListener('change', function (e) {
-  status = e.target.value
+  status = e.target.checked
 
   addHandler.cancel()
   addBtn.removeEventListener('click', addHandler)
