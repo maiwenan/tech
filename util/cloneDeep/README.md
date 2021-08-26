@@ -7,7 +7,7 @@
 1. 递归遍历深层级的对象
 2. 考虑对象属性值是数组的情况
 3. 循环引用情况（WeakMap[target]=newObj）
-4. function 拷贝，通过 eval(`tmp.fn=${func.toString()}`)实现，同时也要考虑复制function属性的数据
+4. function 拷贝，通过 eval(`fn=${func.toString()}`)或者正则匹配出参数和函数体实现，同时也要考虑复制function属性的数据
 5. null 引用类型
 6. 其他对象类型拷贝（可遍历类型与不可遍历类型）
   - Number对象类型

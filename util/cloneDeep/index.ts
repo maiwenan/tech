@@ -28,13 +28,9 @@ function getCtor(target) {
   return new target.constructor()
 }
 function cloneFunction(target) {
-  console.log(target)
-  const tmp = {
-    fn: null
-  }
-  eval(`tmp.fn = ${target.toString()}`)
-  console.log(tmp.fn)
-  return tmp.fn;
+  let fn
+  eval(`fn = ${target.toString()}`)
+  return fn;
 }
 function cloneReg(target) {
   const reFlags = /\w*$/;
