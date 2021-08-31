@@ -7,7 +7,6 @@ function template(tpl: string) {
     .replace(/<%/g, `');`)
 
   const body = `var p=[];with(data){p.push('${tpl}');}return p.join('');`
-  console.log(body)
   const fn = new Function('data', body)
 
   return (data: unknown): string => fn(data)
