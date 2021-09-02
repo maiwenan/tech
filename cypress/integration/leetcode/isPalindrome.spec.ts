@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 import isPalindrome from '../../../leetcode/isPalindrome'
 
-describe('/util/isPalindrome Test', () => {
+describe('/leetcode/isPalindrome Test', () => {
   it('isPalindrome', () => {
     const x = 12121;
 

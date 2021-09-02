@@ -1,7 +1,7 @@
 /// <reference types='cypress' />
 import reverseString from '../../../leetcode/reverseString'
 
-describe('/util/reverseString Test', () => {
+describe('/leetcode/reverseString Test', () => {
   it('reverseString', () => {
     const x = ['h', 'e', 'l', 'l', 'o'];
 
