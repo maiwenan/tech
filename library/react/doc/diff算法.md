@@ -54,3 +54,53 @@ Diff 的流程：
 
 - 第一轮遍历：处理更新的节点
 - 第二轮遍历：处理剩下的不属于更新的节点
+
+
+### 第一轮遍历
+
+1. 遍历 `newChildren`（本次要更新的内容），将 `newChildren[i]` 与 `oldFiber` 比较，判断DOM节点是否可复用
+2. 如果可以复用，则继续遍历下一个节点，即比较 `newChildren[i++]` 与 `oldFiber.sibling`，可以复用则继续遍历
+3. 如果不可以复用，分两种情况：
+
+    - `key`不同导致不可复用：立即跳出整个遍历，第一轮遍历结束
+    - `key`相同，但类型不同导致不可复用：将`oldFiber`标记为`DELETION`，并继续遍历
+
+4. 如果`newChildren`遍历完（即`i === newChildren.length - 1`）或者`oldFiber`遍历完（即`oldFiber.sibling === null`），跳出遍历，第一轮遍历结束。
+
+其中步骤3跳出遍历有1种情况：
+
+- `newChildren`没有遍历完，`oldFiber`也没有遍历完
+
+其中步骤4跳出遍历有3种情况：
+
+- `newChildren`和`oldFiber`同时遍历完，即只需在第一轮遍历进行组件更新 (opens new window)。此时Diff结束。
+- `newChildren`遍历完，`oldFiber`没有遍历完，即本次更新比之前的节点数量少，有节点需要删除
+- `newChildren`没有遍历完，`oldFiber`遍历完，即本次更新比之前的节点数量多，有节点需要插入
+- `newChildren`和`oldFiber`都没有遍历完，即有节点移动的场景，diff算法会稍微复杂些。
+
+### 第二轮遍历
+
+> 考虑性能，尽量减少将节点从后面移动到前面的操作
+
+为了快速找到`key`对应的`oldFiber`，需要使用`key-value`的方式存储`oldFiber`的节点，即：
+
+```
+const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
+```
+
+接下来遍历剩余的`newChildren`，通过`newChildren[i].key`就能在`existingChildren`中找到`key`相同的`oldFiber`
+
+如何判断节点是否移动？
+
+节点是否移动的参照物是：最后一个可复用节点在`oldFiber`中的位置索引（用变量`lastPlacedIndex`）表示。
+
+由于本次更新中节点是按`newChildren`的顺序排列。
+在遍历`newChildren`过程中，每个遍历到的可复用节点一定是当前遍历到的所有可复用节点中最靠右的那个，
+即一定在`lastPlacedIndex`所对应的可复用节点的位置后面。
+
+所以只需要比较遍历到的可复用节点在上次更新时是否也在`lastPlacedIndex`对应的`oldFiber`后面，就能知道两次更新中这两个节点的相对位置改变没有。
+
+我们用变量`oldIndex`表示遍历到的可复用节点在`oldFiber`中的位置索引，即`oldIndex = oldFiber.index`。
+如果`oldIndex` < `lastPlacedIndex`，代表本次更新该节点需要向右移动。
+
+`lastPlacedIndex`初始为0，每遍历一个可复用的节点，如果`oldIndex >= lastPlacedIndex`，则`lastPlacedIndex = oldIndex`。
