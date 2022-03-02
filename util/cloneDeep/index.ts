@@ -3,7 +3,7 @@ const boolType = '[object Boolean]'
 const numberType = '[object Number]'
 const dateType = '[object Date]'
 const errorType = '[object Error]'
-const regexpType = '[object Regexp]'
+const regexpType = '[object RegExp]'
 const symbolType = '[object Symbol]'
 
 // 可遍历类型

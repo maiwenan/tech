@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    const a = 1
+    let b = 2
+    var c = 3
+
+    {
+      var d = 4
+      const e = 5
+      {
+        const f = 6
+        debugger
+      }
+    }
+    (function () {
+      var g = 7
+      {
+        var d = 9
+        const e = 10
+        {
+          const f = 11
+          debugger
+        }
+      }
+      console.log(d)
+      // console.log(e)
+    })()
+    const w = { w: 1 }
+    with(w) {
+      var m = 7
+      {
+        var n = 9
+        const p = 10
+        {
+          const o = 11
+          debugger
+        }
+      }
+    }
+  </script>
+</body>
+</html>

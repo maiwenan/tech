@@ -1,0 +1,35 @@
+FROM centos:centos8
+
+COPY node-v10.17.0-linux-arm64.tar.xz ./
+
+RUN mkdir -p /usr/local/lib/nodejs \
+    && tar -xJvf node-v10.17.0-linux-arm64.tar.xz -C /usr/local/lib/nodejs \
+    && ln -s /usr/local/lib/nodejs/node-v10.17.0-linux-arm64/bin/node /usr/bin/node \
+    && ln -s /usr/local/lib/nodejs/node-v10.17.0-linux-arm64/bin/npm /usr/bin/npm \
+    && ln -s /usr/local/lib/nodejs/node-v10.17.0-linux-arm64/bin/npx /usr/bin/npx
+
+RUN yum install -y alsa-lib.aarch64 atk.aarch64 cups-libs.aarch64 gtk3.aarch64 \
+      libXcomposite.aarch64 libXcursor.aarch64 libXdamage.aarch64 libXext.aarch64 libXi.aarch64 \
+      libXrandr.aarch64 libXScrnSaver.aarch64 libXtst.aarch64 pango.aarch64 xorg-x11-fonts-100dpi \
+      xorg-x11-fonts-75dpi xorg-x11-fonts-cyrillic xorg-x11-fonts-misc xorg-x11-fonts-Type1 \
+      xorg-x11-utils
+
+RUN yum -y install epel-release && yum clean all && yum makecache
+
+COPY *.rpm ./
+
+RUN yum install -y nss-mdns-0.14.1-3.ky10.aarch64.rpm \
+  && yum install -y u2f-hidraw-policy-1.0.2-9.ky10.aarch64.rpm \
+  #&& yum install -y avahi-0.7-21.ky10.aarch64.rpm \
+  && yum install -y minizip-2.8.9-2.el8.aarch64.rpm \
+  && yum install -y chromium-common-71.0.3578.98-5.ky10.aarch64.rpm \
+  && yum install -y chromium-libs-71.0.3578.98-5.ky10.aarch64.rpm \
+     chromium-libs-media-71.0.3578.98-5.ky10.aarch64.rpm \
+  && yum install -y chromium-71.0.3578.98-5.ky10.aarch64.rpm
+
+# pupeteer截图时需要的中文字体
+COPY opentype /usr/share/fonts/opentype
+COPY truetype /usr/share/fonts/truetype
+
+
+CMD ["chromium-browser"]
